@@ -1,0 +1,20 @@
+[
+  {
+    "status": "successful",
+    "error": null,
+    "code": null,
+    "signal": null,
+    "backupStartTime": "2025-03-20T18:00:00.110Z",
+    "backupEndTime": "2025-03-20T18:00:00.305Z",
+    "archivePath": "D:\\softypy\\trust-auto-solution\\trust-auto-solution-server\\public\\trust-auto-solutions.gzip"
+  },
+  {
+    "status": "successful",
+    "error": null,
+    "code": null,
+    "signal": null,
+    "backupStartTime": "2025-03-25T18:00:00.492Z",
+    "backupEndTime": "2025-03-25T18:00:00.692Z",
+    "archivePath": "D:\\softypy\\trust-auto-solution\\trust-auto-solution-server\\public\\trust-auto-solutions.gzip"
+  }
+]
