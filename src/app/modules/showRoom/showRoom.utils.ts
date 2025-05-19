@@ -18,6 +18,6 @@ const findLastShowRoomId = async () => {
 export const generateShowRoomId = async () => {
   const currentId = (await findLastShowRoomId()) || '0000';
   let incrementId = (Number(currentId) + 1).toString().padStart(4, '0');
-  incrementId = `TAS:03${incrementId}`;
+  incrementId = `WAS:03${incrementId}`;
   return incrementId;
 };

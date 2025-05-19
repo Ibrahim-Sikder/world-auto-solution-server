@@ -18,6 +18,6 @@ const findLastCompanyId = async () => {
 export const generateCompanyId = async () => {
   const currentId = (await findLastCompanyId()) || '0000';
   let incrementId = (Number(currentId) + 1).toString().padStart(4, '0');
-  incrementId = `TAS:02${incrementId}`;
+  incrementId = `WAS:02${incrementId}`;
   return incrementId;
 };

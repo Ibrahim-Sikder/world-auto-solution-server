@@ -18,6 +18,6 @@ const findLastCustomerId = async () => {
 export const generateCustomerId = async () => {
   const currentId = (await findLastCustomerId()) || '0000';
   let incrementId = (Number(currentId) + 1).toString().padStart(4, '0');
-  incrementId = `TAS:01${incrementId}`;
+  incrementId = `WAS:01${incrementId}`;
   return incrementId;
 };
