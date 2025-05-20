@@ -3,10 +3,10 @@ import { Types } from 'mongoose';
 import QueryBuilder from '../../builder/QueryBuilder';
 import { Product } from '../product/product.model';
 import { Purchase } from '../purchase/purchase.model';
-import { Stock } from '../stocks/stocks.model';
 import { purchaseOrderSearch } from './purchaseorder.constant';
 import { TPurchaseOrder } from './purchaseorder.interface';
 import { PurchaseOrder } from './purchaseorder.model';
+import { Stocks } from '../stocks/stocks.model';
 
 const createPurchaseOrder = async (
   payload: any,
@@ -105,7 +105,7 @@ export const updatePurchaseOrder = async (
 
     // Step 2: Update Product Stock in Stock collection
     for (const item of updatedOrder.products) {
-      const existingStock = await Stock.findOne({
+      const existingStock = await Stocks.findOne({
         product: item.productId,
         warehouse: updatedOrder.warehouse,
         batchNumber: item.batchNumber || null,
@@ -117,7 +117,7 @@ export const updatePurchaseOrder = async (
         await existingStock.save();
       } else {
         // Create new stock entry
-        await Stock.create({
+        await Stocks.create({
           product: item.productId,
           warehouse: new Types.ObjectId(updatedOrder.warehouse),
           quantity: item.quantity,
