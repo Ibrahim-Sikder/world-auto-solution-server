@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "concurrently \"tsc\" \"npm run copy-files\" ",
+     "build": "concurrently \"tsc\" \"npm run copy-files\" ",
     "start": "PORT=6001 node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "lint": "npx eslint src --ignore-pattern .ts",
@@ -12,7 +12,8 @@
     "prettier": "prettier --ignore-path .gitignore --write \"./src/**/*.+(js|ts|json)\"",
     "prettier:fix": "npx prettier --write src",
     "test": "echo \"Error: no test specified\" && exit 1",
-   "copy-files": "copyfiles -u 1 \"src/app/templates/**/*\" \"src/config/**/*\" \"src/views/**/*\" \"src/utils/**/*\" .env dist/"
+    "copy-files": "copyfiles -u 1 \"src/app/templates/**/*\" dist/",
+      "install": "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm install"
 
   },
   "keywords": [],
