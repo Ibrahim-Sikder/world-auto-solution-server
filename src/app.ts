@@ -28,7 +28,7 @@ if (config.NODE_ENV === 'development') {
 app.use(
   rateLimit({
     max: 2000,
-    windowMs: 60 * 60 * 1000, // 1 hour
+    windowMs: 60 * 60 * 1000, 
     message: 'Too many requests sent by this IP, please try again in an hour!',
   })
 );
@@ -39,7 +39,7 @@ app.use(express.json());
 // ✅ Proper CORS setup
 const allowedOrigins = [
   config.CROSS_ORIGIN_ADMIN,
-  'https://app.worldautosolution.com', 
+  'http://localhost:5173', 
 ];
 
 app.use(
