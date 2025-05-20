@@ -33,8 +33,20 @@ app.use(
   })
 );
 app.use(express.json());
-app.use(cors());
-
+// app.use(cors());
+const allowedOrigins = [ config.CROSS_ORIGIN_ADMIN, 'http://localhost:3002']
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  }),
+);
 app.set('view engine', 'ejs');
 app.use(express.static(path.join('public')));
 

@@ -17,6 +17,6 @@ export default {
   jwt_access_expires_in: process.env.JWT_ACCESS_EXPIRES_IN,
   jwt_refresh_expires_in: process.env.JWT_REFRESH_EXPIRES_IN,
   bcrypt_salt_round: process.env.BCRYPT_SALT_ROUND,
-  default_pass:process.env.default_pass
-
+  default_pass: process.env.default_pass,
+  CROSS_ORIGIN_ADMIN: process.env.CROSS_ORIGIN_ADMIN,
 };
