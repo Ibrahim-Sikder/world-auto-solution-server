@@ -39,7 +39,7 @@ app.use(express.json());
 // ✅ Proper CORS setup
 const allowedOrigins = [
   config.CROSS_ORIGIN_ADMIN,
-  'http://localhost:5173', 
+  'http://localhost:5174', 
 ];
 
 app.use(
