@@ -1,1 +1,1 @@
-export const adjustmentSearch = ['brand', 'name','title'];
+export const adjustmentSearch = ['brand', 'name','title','unit'];
