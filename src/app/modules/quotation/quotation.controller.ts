@@ -108,7 +108,7 @@ const deleteQuotation = catchAsync(async (req, res) => {
 const generateQuotationPdf: RequestHandler = catchAsync(async (req, res) => {
   const { quotationId } = req.params
 
-  const baseUrl = (process.env.NEXT_PUBLIC_IMAGE_BASE_URL || "https://api.trustautosolution.com").replace(/\/$/, "")
+  const baseUrl = (process.env.NEXT_PUBLIC_IMAGE_BASE_URL || "https://api.worldautosolution.com").replace(/\/$/, "")
 
   try {
     const pdfBuffer = await QuotationServices.generateQuotationPdf(quotationId, baseUrl)

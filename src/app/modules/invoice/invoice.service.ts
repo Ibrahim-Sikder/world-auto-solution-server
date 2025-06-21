@@ -821,7 +821,7 @@ const generateInvoicePDF = async (
 
   let logoBase64 = '';
   try {
-    const logoUrl = `${imageUrl}/images/logo.png`;
+    const logoUrl = `${imageUrl}/images/world-auto-solution.jpg`;
     const logoResponse = await fetch(logoUrl);
     const logoBuffer = await logoResponse.arrayBuffer();
     logoBase64 = Buffer.from(logoBuffer).toString('base64');

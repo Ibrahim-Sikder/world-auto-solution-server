@@ -70,7 +70,7 @@ const generateMoneyPdf: RequestHandler = catchAsync(async (req, res) => {
   const { moneyReceiptId } = req.params;
 
   const baseUrl = (
-    process.env.NEXT_PUBLIC_IMAGE_BASE_URL || 'https://api.trustautosolution.com'
+    process.env.NEXT_PUBLIC_IMAGE_BASE_URL || 'https://api.worldautosolution.com'
   ).replace(/\/$/, '');
 
   try {

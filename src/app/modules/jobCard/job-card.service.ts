@@ -795,7 +795,7 @@ export const generateJobCardPdf = async (
   }
 
   // Fetch both logos
-  const images = ['logo.png', 'car3.jpeg'];
+  const images = ['world-auto-solution.jpg', 'car3.jpeg'];
   const imageBase64Array = await Promise.all(
     images.map(async (imageName) => {
       try {

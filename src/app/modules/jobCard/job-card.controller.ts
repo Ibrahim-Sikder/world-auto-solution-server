@@ -134,9 +134,10 @@ const generateJobCardPdf: RequestHandler = catchAsync(async (req, res) => {
 
   const baseUrl = (
     process.env.NEXT_PUBLIC_IMAGE_BASE_URL ||
-    'https://api.trustautosolution.com'
+    'https://api.worldautosolution.com'
   ).replace(/\/$/, '');
 
+  
   try {
     const pdfBuffer = await JobCardServices.generateJobCardPdf(
       jobcardId,
