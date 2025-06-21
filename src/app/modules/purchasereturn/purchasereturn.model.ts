@@ -7,20 +7,20 @@ const purchaseReturnSchema = new Schema<TPurchaseReturn>(
       type: String,
       required: true,
     },
-    purchaseId: {
-      type: Types.ObjectId,
-      ref: 'Purchase',
-      required: true,
-    },
+    // purchaseId: {
+    //   type: Types.ObjectId,
+    //   ref: 'Purchase',
+    //   required: true,
+    // },
     referenceNo: {
       type: String,
       required: true,
     },
-    supplier: {
-      type: Types.ObjectId,
-      ref: 'Supplier',
-      required: true,
-    },
+    // supplier: {
+    //   type: Types.ObjectId,
+    //   ref: 'Supplier',
+    //   required: true,
+    // },
     supplierName: {
       type: String,
     },

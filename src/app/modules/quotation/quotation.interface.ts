@@ -12,24 +12,32 @@ export interface TQuotation {
   showRoom: Types.ObjectId;
   vehicle: Types.ObjectId;
 
-  input_data: [
-    {
-      description: string;
-      quantity: number;
-      rate: number;
-      unit: string;
-      total: number;
-    },
-  ];
-  service_input_data: [
-    {
-      description: string;
-      quantity: number;
-      rate: number;
-      unit: string;
-      total: number;
-    },
-  ];
+  input_data: Array<{
+    product: Types.ObjectId;
+    warehouse: string;
+    product_name: string;
+    quantity: number;
+    rate: number;
+    unit: string;
+    description: string;
+    total: number;
+    sellingPrice: number;
+    batchNumber?: string;
+  }>;
+
+  service_input_data: Array<{
+    product: Types.ObjectId;
+    warehouse: string;
+    product_name: string;
+    quantity: number;
+    description: string;
+    rate: number;
+    unit: string;
+    total: number;
+    sellingPrice: number;
+    batchNumber?: string;
+  }>;
+
   total_amount: number;
   parts_total: number;
   parts_total_In_words: string;

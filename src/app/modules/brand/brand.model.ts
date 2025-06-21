@@ -7,11 +7,7 @@ const brandSchema: Schema = new Schema<TBrand>(
       type: String,
       required: [true, 'Brand is required'],
       trim: true,
-    },
-    image: {
-      type: String,
-      required: [true, 'Image URL is required'],
-    },
+    }
   },
   {
     timestamps: true,

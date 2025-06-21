@@ -44,7 +44,6 @@ const updateWarehouse = async (
   payload: Partial<IWarehouse>,
 ): Promise<IWarehouse | null> => {
 
-  console.log(payload)
   const updatedWarehouse = await Warehouse.findByIdAndUpdate(id, payload, {
     new: true,
     runValidators: true,

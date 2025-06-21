@@ -34,9 +34,9 @@ import { purchaseOrderRoutes } from '../modules/purchaseorder/purchaseorder.rout
 import { purchaseReturnRoutes } from '../modules/purchasereturn/purchasereturn.route';
 import { warehouseRoutes } from '../modules/warehouse/warehouse.route';
 import { stockRoutes } from '../modules/stocks/stocks.route';
-
+import { stockTransferRoutes } from '../modules/stockTransfer/stockTransfer.route';
+import { stockTransactionRoutes } from '../modules/stockTransaction/stockTransaction.route';
 const router = Router();
-
 const moduleRoutes = [
   {
     path: '/customers',
@@ -115,6 +115,10 @@ const moduleRoutes = [
     route: warehouseRoutes,
   },
   {
+    path: '/stock-transfer',
+    route: stockTransferRoutes,
+  },
+  {
     path: '/donation',
     route: donationRoutes,
   },
@@ -153,6 +157,10 @@ const moduleRoutes = [
   {
     path: '/stocks',
     route: stockRoutes,
+  },
+  {
+    path: '/stock-transaction',
+    route: stockTransactionRoutes,
   },
   {
     path: '/leave-requests',

@@ -178,179 +178,6 @@ const createInvoiceDetails = async (payload: {
   }
 };
 
-// const getAllInvoicesFromDB = async (
-//   id: string | null,
-//   limit: number,
-//   page: number,
-//   searchTerm: string,
-//   isRecycled?: string,
-// ) => {
-//   let idMatchQuery: Record<string, unknown> = {};
-//   let searchQuery: { [key: string]: any } = {};
-
-//   // Filter by ID if provided
-//   if (id) {
-//     idMatchQuery = {
-//       $or: [
-//         { 'customer._id': new mongoose.Types.ObjectId(id) },
-//         { 'company._id': new mongoose.Types.ObjectId(id) },
-//         { 'vehicle._id': new mongoose.Types.ObjectId(id) },
-//         { 'showRoom._id': new mongoose.Types.ObjectId(id) },
-//       ],
-//     };
-//   }
-
-//   // Apply search term filtering if provided
-//   if (searchTerm) {
-//     const escapedFilteringData = searchTerm.replace(
-//       /[.*+?^${}()|[\]\\]/g,
-//       '\\$&',
-//     );
-
-//     const quotationSearchQuery = invoiceSearchableFields.map((field) => ({
-//       [field]: { $regex: escapedFilteringData, $options: 'i' },
-//     }));
-
-//     const vehicleSearchQuery = vehicleFields.map((field) => {
-//       if (field === 'vehicle.vehicle_model' && !isNaN(Number(searchTerm))) {
-//         return { [field]: { $eq: Number(searchTerm) } };
-//       }
-//       return { [field]: { $regex: escapedFilteringData, $options: 'i' } };
-//     });
-
-//     const customerSearchQuery = customerFields.map((field) => ({
-//       [field]: { $regex: escapedFilteringData, $options: 'i' },
-//     }));
-//     const companySearchQuery = companyFields.map((field) => ({
-//       [field]: { $regex: escapedFilteringData, $options: 'i' },
-//     }));
-//     const showRoomSearchQuery = showRoomFields.map((field) => ({
-//       [field]: { $regex: escapedFilteringData, $options: 'i' },
-//     }));
-
-//     searchQuery = {
-//       $or: [
-//         ...quotationSearchQuery,
-//         ...vehicleSearchQuery,
-//         ...customerSearchQuery,
-//         ...companySearchQuery,
-//         ...showRoomSearchQuery,
-//       ],
-//     };
-//   }
-
-//   // Handle isRecycled filter
-//   if (isRecycled !== undefined) {
-//     searchQuery.isRecycled = isRecycled === 'true';
-//   }
-
-//   const invoices = await Invoice.aggregate([
-//     {
-//       $lookup: {
-//         from: 'vehicles',
-//         localField: 'vehicle',
-//         foreignField: '_id',
-//         as: 'vehicle',
-//       },
-//     },
-//     { $unwind: { path: '$vehicle', preserveNullAndEmptyArrays: true } },
-//     {
-//       $lookup: {
-//         from: 'companies',
-//         localField: 'company',
-//         foreignField: '_id',
-//         as: 'company',
-//       },
-//     },
-//     { $unwind: { path: '$company', preserveNullAndEmptyArrays: true } },
-//     {
-//       $lookup: {
-//         from: 'customers',
-//         localField: 'customer',
-//         foreignField: '_id',
-//         as: 'customer',
-//       },
-//     },
-//     { $unwind: { path: '$customer', preserveNullAndEmptyArrays: true } },
-//     {
-//       $lookup: {
-//         from: 'showrooms',
-//         localField: 'showRoom',
-//         foreignField: '_id',
-//         as: 'showRoom',
-//       },
-//     },
-//     { $unwind: { path: '$showRoom', preserveNullAndEmptyArrays: true } },
-
-//     // Lookup for MoneyReceipt population based on job_no
-//     {
-//       $lookup: {
-//         from: 'moneyreceipts',
-//         let: { job_no: '$job_no' },
-//         pipeline: [
-//           {
-//             $match: {
-//               $expr: { $eq: ['$job_no', '$$job_no'] },
-//             },
-//           },
-//           {
-//             $project: {
-//               _id: 0,
-//               remaining: 1,
-//               advance: 1,
-//               total_amount: 1,
-//             },
-//           },
-//         ],
-//         as: 'moneyReceipts',
-//       },
-//     },
-
-//     { $match: id ? idMatchQuery : {} },
-//     { $match: searchQuery },
-//     { $sort: { createdAt: -1 } },
-//     ...(page && limit
-//       ? [{ $skip: (page - 1) * limit }, { $limit: limit }]
-//       : []),
-//     {
-//       $addFields: {
-//         createdAtFormatted: {
-//           $cond: {
-//             if: { $not: ['$createdAt'] },
-//             then: 'N/A',
-//             else: {
-//               $dateToString: {
-//                 format: '%Y-%m-%d %H:%M:%S',
-//                 date: '$createdAt',
-//               },
-//             },
-//           },
-//         },
-//       },
-//     },
-//   ]);
-
-//   const totalDataAggregation = await Invoice.aggregate([
-//     { $match: id ? idMatchQuery : {} },
-//     { $match: searchQuery },
-//     { $count: 'totalCount' },
-//   ]);
-
-//   const totalData =
-//     totalDataAggregation.length > 0 ? totalDataAggregation[0].totalCount : 0;
-//   const totalPages = Math.ceil(totalData / limit);
-//   console.log(totalData);
-//   console.log(totalPages);
-//   return {
-//     invoices,
-//     meta: {
-//       totalData,
-//       totalPages,
-//       currentPage: page,
-//     },
-//   };
-// };
-
 const getAllInvoicesFromDB = async (
   id: string | null,
   limit: number,
@@ -358,45 +185,48 @@ const getAllInvoicesFromDB = async (
   searchTerm: string,
   isRecycled?: string,
 ) => {
-  let idMatchQuery: Record<string, unknown> = {}
-  let searchQuery: { [key: string]: any } = {}
+  let idMatchQuery: Record<string, unknown> = {};
+  let searchQuery: { [key: string]: any } = {};
 
   // Filter by ID if provided
   if (id) {
     idMatchQuery = {
       $or: [
-        { "customer._id": new mongoose.Types.ObjectId(id) },
-        { "company._id": new mongoose.Types.ObjectId(id) },
-        { "vehicle._id": new mongoose.Types.ObjectId(id) },
-        { "showRoom._id": new mongoose.Types.ObjectId(id) },
+        { 'customer._id': new mongoose.Types.ObjectId(id) },
+        { 'company._id': new mongoose.Types.ObjectId(id) },
+        { 'vehicle._id': new mongoose.Types.ObjectId(id) },
+        { 'showRoom._id': new mongoose.Types.ObjectId(id) },
       ],
-    }
+    };
   }
 
   // Apply search term filtering if provided
   if (searchTerm) {
-    const escapedFilteringData = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    const escapedFilteringData = searchTerm.replace(
+      /[.*+?^${}()|[\]\\]/g,
+      '\\$&',
+    );
 
     const quotationSearchQuery = invoiceSearchableFields.map((field) => ({
-      [field]: { $regex: escapedFilteringData, $options: "i" },
-    }))
+      [field]: { $regex: escapedFilteringData, $options: 'i' },
+    }));
 
     const vehicleSearchQuery = vehicleFields.map((field) => {
-      if (field === "vehicle.vehicle_model" && !isNaN(Number(searchTerm))) {
-        return { [field]: { $eq: Number(searchTerm) } }
+      if (field === 'vehicle.vehicle_model' && !isNaN(Number(searchTerm))) {
+        return { [field]: { $eq: Number(searchTerm) } };
       }
-      return { [field]: { $regex: escapedFilteringData, $options: "i" } }
-    })
+      return { [field]: { $regex: escapedFilteringData, $options: 'i' } };
+    });
 
     const customerSearchQuery = customerFields.map((field) => ({
-      [field]: { $regex: escapedFilteringData, $options: "i" },
-    }))
+      [field]: { $regex: escapedFilteringData, $options: 'i' },
+    }));
     const companySearchQuery = companyFields.map((field) => ({
-      [field]: { $regex: escapedFilteringData, $options: "i" },
-    }))
+      [field]: { $regex: escapedFilteringData, $options: 'i' },
+    }));
     const showRoomSearchQuery = showRoomFields.map((field) => ({
-      [field]: { $regex: escapedFilteringData, $options: "i" },
-    }))
+      [field]: { $regex: escapedFilteringData, $options: 'i' },
+    }));
 
     searchQuery = {
       $or: [
@@ -406,57 +236,57 @@ const getAllInvoicesFromDB = async (
         ...companySearchQuery,
         ...showRoomSearchQuery,
       ],
-    }
+    };
   }
 
   // Handle isRecycled filter
   if (isRecycled !== undefined) {
-    searchQuery.isRecycled = isRecycled === "true"
+    searchQuery.isRecycled = isRecycled === 'true';
   }
 
   // Create a base pipeline for both data and count
   const basePipeline = [
     {
       $lookup: {
-        from: "vehicles",
-        localField: "vehicle",
-        foreignField: "_id",
-        as: "vehicle",
+        from: 'vehicles',
+        localField: 'vehicle',
+        foreignField: '_id',
+        as: 'vehicle',
       },
     },
-    { $unwind: { path: "$vehicle", preserveNullAndEmptyArrays: true } },
+    { $unwind: { path: '$vehicle', preserveNullAndEmptyArrays: true } },
     {
       $lookup: {
-        from: "companies",
-        localField: "company",
-        foreignField: "_id",
-        as: "company",
+        from: 'companies',
+        localField: 'company',
+        foreignField: '_id',
+        as: 'company',
       },
     },
-    { $unwind: { path: "$company", preserveNullAndEmptyArrays: true } },
+    { $unwind: { path: '$company', preserveNullAndEmptyArrays: true } },
     {
       $lookup: {
-        from: "customers",
-        localField: "customer",
-        foreignField: "_id",
-        as: "customer",
+        from: 'customers',
+        localField: 'customer',
+        foreignField: '_id',
+        as: 'customer',
       },
     },
-    { $unwind: { path: "$customer", preserveNullAndEmptyArrays: true } },
+    { $unwind: { path: '$customer', preserveNullAndEmptyArrays: true } },
     {
       $lookup: {
-        from: "showrooms",
-        localField: "showRoom",
-        foreignField: "_id",
-        as: "showRoom",
+        from: 'showrooms',
+        localField: 'showRoom',
+        foreignField: '_id',
+        as: 'showRoom',
       },
     },
-    { $unwind: { path: "$showRoom", preserveNullAndEmptyArrays: true } },
+    { $unwind: { path: '$showRoom', preserveNullAndEmptyArrays: true } },
 
     // Apply the same filters to both pipelines
     { $match: id ? idMatchQuery : {} },
     { $match: searchQuery },
-  ]
+  ];
 
   // Pipeline for fetching data
   const dataPipeline = [
@@ -464,12 +294,12 @@ const getAllInvoicesFromDB = async (
     // Lookup for MoneyReceipt population based on job_no
     {
       $lookup: {
-        from: "moneyreceipts",
-        let: { job_no: "$job_no" },
+        from: 'moneyreceipts',
+        let: { job_no: '$job_no' },
         pipeline: [
           {
             $match: {
-              $expr: { $eq: ["$job_no", "$$job_no"] },
+              $expr: { $eq: ['$job_no', '$$job_no'] },
             },
           },
           {
@@ -481,40 +311,43 @@ const getAllInvoicesFromDB = async (
             },
           },
         ],
-        as: "moneyReceipts",
+        as: 'moneyReceipts',
       },
     },
     { $sort: { createdAt: -1 as 1 | -1 } },
-    ...(page && limit ? [{ $skip: (page - 1) * limit }, { $limit: limit }] : []),
+    ...(page && limit
+      ? [{ $skip: (page - 1) * limit }, { $limit: limit }]
+      : []),
     {
       $addFields: {
         createdAtFormatted: {
           $cond: {
-            if: { $not: ["$createdAt"] },
-            then: "N/A",
+            if: { $not: ['$createdAt'] },
+            then: 'N/A',
             else: {
               $dateToString: {
-                format: "%Y-%m-%d %H:%M:%S",
-                date: "$createdAt",
+                format: '%Y-%m-%d %H:%M:%S',
+                date: '$createdAt',
               },
             },
           },
         },
       },
     },
-  ]
+  ];
 
   // Pipeline for counting total documents
-  const countPipeline = [...basePipeline, { $count: "totalCount" }]
+  const countPipeline = [...basePipeline, { $count: 'totalCount' }];
 
   // Execute both pipelines
   const [invoices, totalDataAggregation] = await Promise.all([
     Invoice.aggregate(dataPipeline),
     Invoice.aggregate(countPipeline),
-  ])
+  ]);
 
-  const totalData = totalDataAggregation.length > 0 ? totalDataAggregation[0].totalCount : 0
-  const totalPages = Math.ceil(totalData / limit)
+  const totalData =
+    totalDataAggregation.length > 0 ? totalDataAggregation[0].totalCount : 0;
+  const totalPages = Math.ceil(totalData / limit);
 
   return {
     invoices,
@@ -523,8 +356,8 @@ const getAllInvoicesFromDB = async (
       totalPages,
       currentPage: page,
     },
-  }
-}
+  };
+};
 
 const updateInvoiceIntoDB = async (
   id: string,
@@ -981,14 +814,14 @@ const generateInvoicePDF = async (
     .populate('company')
     .populate('showRoom')
     .populate('vehicle');
-
+  console.log(invoice);
   if (!invoice) {
     throw new Error('Invoice not found');
   }
 
   let logoBase64 = '';
   try {
-    const logoUrl = `${imageUrl}/images/world-auto-solution.jpg`;
+    const logoUrl = `${imageUrl}/images/logo.png`;
     const logoResponse = await fetch(logoUrl);
     const logoBuffer = await logoResponse.arrayBuffer();
     logoBase64 = Buffer.from(logoBuffer).toString('base64');

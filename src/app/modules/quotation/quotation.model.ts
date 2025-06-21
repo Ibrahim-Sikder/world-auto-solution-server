@@ -36,25 +36,35 @@ const quotationSchema: Schema<TQuotation> = new Schema<TQuotation>(
       type: Schema.ObjectId,
       ref: 'Vehicle',
     },
+input_data: [
+  {
+    product: { type: Schema.Types.ObjectId, ref: 'Product' },
+    warehouse: { type: String },
+    product_name: { type: String },
+    quantity: Number,
+    description: String,
+    unit: String,
+    rate: Number,
+    total: Number,
+    sellingPrice: Number,
+    batchNumber: String,
+  },
+],
+service_input_data: [
+  {
+    product: { type: Schema.Types.ObjectId, ref: 'Product' },
+    warehouse: { type: String },
+    product_name: { type: String },
+    quantity: Number,
+    unit: String,
+    rate: Number,
+    description: String,
+    total: Number,
+    sellingPrice: Number,
+    batchNumber: String,
+  },
+],
 
-    input_data: [
-      {
-        description: { type: String, trim: true },
-        quantity: Number,
-        unit: String,
-        rate: Number,
-        total: Number,
-      },
-    ],
-    service_input_data: [
-      {
-        description: { type: String, trim: true },
-        quantity: Number,
-        unit: String,
-        rate: Number,
-        total: Number,
-      },
-    ],
     total_amount: {
       type: Number,
       required: [true, 'Total amount is required'],

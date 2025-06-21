@@ -14,9 +14,6 @@ const createCategory = async (
     const file = req.file; 
     const payload = req.body; 
 
-    console.log('Request Body:', req.body);
-    console.log('Uploaded File:', req.file);
-
     if (payload.data) {
       Object.assign(payload, JSON.parse(payload.data)); 
       delete payload.data;
@@ -101,7 +98,6 @@ const updateCategory = async (
   next: NextFunction,
 ) => {
 
-  console.log(req.body)
   try {
     const { id } = req.params;
     const result = await categoryServices.updateCategory(id, req.body);

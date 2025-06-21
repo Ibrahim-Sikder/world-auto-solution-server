@@ -25,8 +25,12 @@ import puppeteer from 'puppeteer';
 import { join } from 'path';
 import ejs from 'ejs';
 import { amountInWords } from '../../middlewares/taka-in-words';
+import { Stocks } from '../stocks/stocks.model';
+import httpStatus from 'http-status';
+import { StockTransaction } from '../stockTransaction/stockTransaction.model';
+import { Product } from '../product/product.model';
 
-const createQuotationDetails = async (payload: {
+export const createQuotationDetails = async (payload: {
   customer: TCustomer;
   company: TCompany;
   showroom: TShowRoom;
@@ -35,25 +39,33 @@ const createQuotationDetails = async (payload: {
 }) => {
   const session = await mongoose.startSession();
   session.startTransaction();
+
   try {
     const { customer, company, showroom, quotation, vehicle } = payload;
 
+    // Sanitize input data
     const sanitizeCustomer = sanitizePayload(customer);
     const sanitizeCompany = sanitizePayload(company);
     const sanitizeShowroom = sanitizePayload(showroom);
     const sanitizeQuotation = sanitizePayload(quotation);
     const sanitizeVehicle = sanitizePayload(vehicle);
 
+    // Validate required totals
+    if (
+      sanitizeQuotation.parts_total === undefined ||
+      sanitizeQuotation.service_total === undefined ||
+      sanitizeQuotation.net_total === undefined
+    ) {
+      throw new AppError(400, 'Missing required total values in quotation');
+    }
+
+    // Generate quotation number and amount in words
     const quotationNumber = await generateQuotationNo();
+    const partsInWords = amountInWords(sanitizeQuotation.parts_total);
+    const serviceInWords = amountInWords(sanitizeQuotation.service_total);
+    const netTotalInWords = amountInWords(sanitizeQuotation.net_total);
 
-    const partsInWords = amountInWords(sanitizeQuotation.parts_total as number);
-    const serviceInWords = amountInWords(
-      sanitizeQuotation.service_total as number,
-    );
-    const netTotalInWords = amountInWords(
-      sanitizeQuotation.net_total as number,
-    );
-
+    // Create quotation
     const quotationData = new Quotation({
       ...sanitizeQuotation,
       quotation_no: quotationNumber,
@@ -64,10 +76,119 @@ const createQuotationDetails = async (payload: {
 
     await quotationData.save({ session });
 
+    const { input_data = [], service_input_data = [] } = quotation;
+
+    // ✅ Only use `input_data` for stock reduction
+    const productItems = input_data.filter(
+      (item) => item.product && item.warehouse && item.quantity
+    );
+
+    // Prepare stock reduction map
+    const stockUpdateMap = new Map<
+      string,
+      {
+        product: string;
+        warehouse: string;
+        batchNumber?: string;
+        totalQuantity: number;
+        product_name: string;
+        sellingPrice: number;
+      }
+    >();
+
+    for (const item of productItems) {
+      const {
+        product,
+        quantity = 0,
+        warehouse,
+        batchNumber,
+        product_name,
+        sellingPrice = 0,
+      } = item;
+
+      const key = `${product}-${warehouse}-${batchNumber || 'no-batch'}`;
+
+      if (stockUpdateMap.has(key)) {
+        stockUpdateMap.get(key)!.totalQuantity += quantity;
+      } else {
+        stockUpdateMap.set(key, {
+          product: String(product),
+          warehouse,
+          batchNumber,
+          totalQuantity: quantity,
+          product_name,
+          sellingPrice,
+        });
+      }
+    }
+
+    // Process stock and product quantity update
+    for (const {
+      product,
+      warehouse,
+      batchNumber,
+      totalQuantity,
+      product_name,
+      sellingPrice,
+    } of stockUpdateMap.values()) {
+      const stockQuery: any = { product, warehouse };
+      if (batchNumber) stockQuery.batchNumber = batchNumber;
+
+      const existingStock = await Stocks.findOne(stockQuery).session(session);
+      if (!existingStock) {
+        throw new AppError(404, `Stock "${product_name}" not found.`);
+      }
+
+      if (existingStock.quantity < totalQuantity) {
+        throw new AppError(
+          400,
+          `Insufficient stock for "${product_name}". Available: ${existingStock.quantity}, Required: ${totalQuantity}`
+        );
+      }
+
+      // Reduce stock quantity
+      existingStock.quantity -= totalQuantity;
+      await existingStock.save({ session });
+
+      // Create stock transaction
+      const stockTransaction = new StockTransaction({
+        product,
+        warehouse,
+        quantity: totalQuantity,
+        batchNumber,
+        type: 'out',
+        referenceType: 'sale',
+        referenceId: quotationData._id,
+        sellingPrice,
+        date: new Date(),
+      });
+
+      await stockTransaction.save({ session });
+
+      // Update Product model quantity
+      const productData = await Product.findById(product).session(session);
+      if (!productData) {
+        throw new AppError(404, `Product not found.`);
+      }
+
+      if ((productData.product_quantity ?? 0) < totalQuantity) {
+        throw new AppError(
+          400,
+          `Insufficient quantity in product "${product_name}". Available: ${productData.product_quantity}, Required: ${totalQuantity}`
+        );
+      }
+
+      productData.product_quantity -= totalQuantity;
+      productData.lastSoldDate = new Date().toISOString();
+      await productData.save({ session });
+    }
+
+    // Handle user assignment
     if (quotation.user_type === 'customer') {
       const existingCustomer = await Customer.findOne({
         customerId: quotation.Id,
       }).session(session);
+
       if (existingCustomer) {
         await Customer.findByIdAndUpdate(
           existingCustomer._id,
@@ -75,11 +196,7 @@ const createQuotationDetails = async (payload: {
             $set: sanitizeCustomer,
             $push: { quotations: quotationData._id },
           },
-          {
-            new: true,
-            runValidators: true,
-            session: session,
-          },
+          { new: true, runValidators: true, session }
         );
         quotationData.customer = existingCustomer._id;
         await quotationData.save({ session });
@@ -88,6 +205,7 @@ const createQuotationDetails = async (payload: {
       const existingCompany = await Company.findOne({
         companyId: quotation.Id,
       }).session(session);
+
       if (existingCompany) {
         await Company.findByIdAndUpdate(
           existingCompany._id,
@@ -95,11 +213,7 @@ const createQuotationDetails = async (payload: {
             $set: sanitizeCompany,
             $push: { quotations: quotationData._id },
           },
-          {
-            new: true,
-            runValidators: true,
-            session,
-          },
+          { new: true, runValidators: true, session }
         );
         quotationData.company = existingCompany._id;
         await quotationData.save({ session });
@@ -108,6 +222,7 @@ const createQuotationDetails = async (payload: {
       const existingShowRoom = await ShowRoom.findOne({
         showRoomId: quotation.Id,
       }).session(session);
+
       if (existingShowRoom) {
         await ShowRoom.findByIdAndUpdate(
           existingShowRoom._id,
@@ -115,30 +230,21 @@ const createQuotationDetails = async (payload: {
             $set: sanitizeShowroom,
             $push: { quotations: quotationData._id },
           },
-          {
-            new: true,
-            runValidators: true,
-            session,
-          },
+          { new: true, runValidators: true, session }
         );
         quotationData.showRoom = existingShowRoom._id;
         await quotationData.save({ session });
       }
     }
 
+    // Vehicle handling
     if (vehicle && vehicle.chassis_no) {
       const vehicleData = await Vehicle.findOneAndUpdate(
         { chassis_no: vehicle.chassis_no },
-        // { $set: sanitizeVehicle },
-        {
-          $set: { mileageHistory: vehicle.mileageHistory || [] },
-        },
-        {
-          new: true,
-          runValidators: true,
-          session,
-        },
+        { $set: { mileageHistory: vehicle.mileageHistory || [] } },
+        { new: true, runValidators: true, session }
       );
+
       if (vehicleData) {
         quotationData.vehicle = vehicleData._id;
         await quotationData.save({ session });
@@ -147,6 +253,7 @@ const createQuotationDetails = async (payload: {
 
     await session.commitTransaction();
     session.endSession();
+
     return quotationData;
   } catch (error) {
     await session.abortTransaction();
@@ -154,6 +261,7 @@ const createQuotationDetails = async (payload: {
     throw error;
   }
 };
+
 
 const getAllQuotationsFromDB = async (
   id: string | null,
@@ -195,8 +303,7 @@ const getAllQuotationsFromDB = async (
       }
       return { [field]: { $regex: escapedFilteringData, $options: 'i' } };
     });
-    
-    
+
     const customerSearchQuery = customerFields.map((field) => ({
       [field]: { $regex: escapedFilteringData, $options: 'i' },
     }));
@@ -297,7 +404,6 @@ const getAllQuotationsFromDB = async (
       ? [{ $skip: (page - 1) * limit }, { $limit: limit }]
       : []),
   ]);
-
 
   // Calculate total data count using an aggregation pipeline for consistency
   const totalDataAggregation = await Quotation.aggregate([
@@ -426,6 +532,7 @@ const updateQuotationIntoDB = async (
 ) => {
   const session = await mongoose.startSession();
   session.startTransaction();
+
   try {
     const { customer, company, showroom, quotation, vehicle } = payload;
 
@@ -443,6 +550,39 @@ const updateQuotationIntoDB = async (
       sanitizeQuotation.net_total as number,
     );
 
+    // ১. পুরানো Quotation নিয়ে আসো
+    const oldQuotation = await Quotation.findById(id).session(session);
+    if (!oldQuotation) {
+      throw new AppError(StatusCodes.NOT_FOUND, 'No quotation found');
+    }
+
+    // ২. পুরানো stockTransaction গুলো নিয়ে আসো এবং stock revert করো (পুরানো কমানো quantity ফেরত দাও)
+    const oldStockTransactions = await StockTransaction.find({
+      referenceId: id,
+      referenceType: 'sale',
+    }).session(session);
+
+    for (const tx of oldStockTransactions) {
+      const stockQuery: any = {
+        product: tx.product,
+        warehouse: tx.warehouse,
+      };
+      if (tx.batchNumber) stockQuery.batchNumber = tx.batchNumber;
+
+      const stock = await Stocks.findOne(stockQuery).session(session);
+      if (stock) {
+        stock.quantity += tx.quantity; // revert stock quantity
+        await stock.save({ session });
+      }
+    }
+
+    // ৩. পুরানো stockTransaction গুলো মুছে ফেলো
+    await StockTransaction.deleteMany({
+      referenceId: id,
+      referenceType: 'sale',
+    }).session(session);
+
+    // ৪. পুরানো quotation update করো
     const updateQuotation = await Quotation.findByIdAndUpdate(
       id,
       {
@@ -463,6 +603,102 @@ const updateQuotationIntoDB = async (
     if (!updateQuotation) {
       throw new AppError(StatusCodes.NOT_FOUND, 'No quotation found');
     }
+
+    // ৫. নতুন input_data এবং service_input_data থেকে stock update করো (create এর মতোই)
+    const { input_data = [], service_input_data = [] } = sanitizeQuotation;
+    const allItems = [...input_data, ...service_input_data];
+
+    if (allItems.length > 0) {
+      const stockUpdateMap = new Map<
+        string,
+        {
+          product: string;
+          warehouse: string;
+          batchNumber?: string;
+          totalQuantity: number;
+          product_name: string;
+          sellingPrice: number;
+        }
+      >();
+
+      for (const item of allItems) {
+        const {
+          product,
+          quantity = 0,
+          warehouse,
+          batchNumber,
+          product_name,
+          sellingPrice = 0,
+        } = item;
+
+        if (!product || !warehouse) {
+          continue;
+        }
+
+        const key = `${product}-${warehouse}-${batchNumber || 'no-batch'}`;
+
+        if (stockUpdateMap.has(key)) {
+          stockUpdateMap.get(key)!.totalQuantity += quantity;
+        } else {
+          stockUpdateMap.set(key, {
+            product: String(product),
+            warehouse,
+            batchNumber,
+            totalQuantity: quantity,
+            product_name,
+            sellingPrice,
+          });
+        }
+      }
+
+      for (const {
+        product,
+        warehouse,
+        batchNumber,
+        totalQuantity,
+        product_name,
+        sellingPrice,
+      } of stockUpdateMap.values()) {
+        const stockQuery: any = { product, warehouse };
+        if (batchNumber) stockQuery.batchNumber = batchNumber;
+
+        const existingStock = await Stocks.findOne(stockQuery).session(session);
+        if (!existingStock) {
+          throw new AppError(
+            httpStatus.NOT_FOUND,
+            `Stock "${product_name}" not found.`,
+          );
+        }
+
+        if (existingStock.quantity < totalQuantity) {
+          throw new AppError(
+            httpStatus.BAD_REQUEST,
+            `Insufficient stock for "${product_name}". Available: ${existingStock.quantity}, Required: ${totalQuantity}`,
+          );
+        }
+
+        // stock থেকে quantity কমাও
+        existingStock.quantity -= totalQuantity;
+        await existingStock.save({ session });
+
+        // নতুন StockTransaction তৈরি করো
+        const stockTransaction = new StockTransaction({
+          product,
+          warehouse,
+          quantity: totalQuantity,
+          batchNumber,
+          type: 'out',
+          referenceType: 'sale',
+          referenceId: updateQuotation._id,
+          sellingPrice,
+          date: new Date(),
+        });
+
+        await stockTransaction.save({ session });
+      }
+    }
+
+    // ৬. যেভাবে create এ করেছিলে তেমনি customer/company/showRoom update করো + vehicle update করো
 
     if (quotation.user_type === 'customer') {
       const existingCustomer = await Customer.findOne({
@@ -613,7 +849,7 @@ const generateQuotationPdf = async (
 
   let logoBase64 = '';
   try {
-    const logoUrl = `${imageUrl}/images/world-auto-solution.jpg`;
+    const logoUrl = `${imageUrl}/images/logo.png`;
     const logoResponse = await fetch(logoUrl);
     const logoBuffer = await logoResponse.arrayBuffer();
     logoBase64 = Buffer.from(logoBuffer).toString('base64');

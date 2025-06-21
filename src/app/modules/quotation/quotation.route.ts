@@ -16,7 +16,7 @@ router
   .get(quotationController.getSingleQuotation)
   .put(quotationController.updateQuotation)
   .delete(quotationController.deleteQuotation);
-  router.get('/quotation/:quotationId', quotationController.generateQuotationPdf);
+router.get('/quotation/:quotationId', quotationController.generateQuotationPdf);
 
 router
   .route('/remove-quotation')
@@ -31,7 +31,12 @@ router
   .route('/delete-permanantly/:id')
   .delete(quotationController.permanantlyDeleteQuotation);
 
-    router.patch('/recycle-all', quotationController.moveAllToRecycledBinMoneyReceipts);
-    router.patch('/restore-all', quotationController.restoreAllFromRecycledBinMoneyReceipts);
+router.patch(
+  '/recycle-all',
+  quotationController.moveAllToRecycledBinMoneyReceipts,
+);
+router.patch(
+  '/restore-all',
+  quotationController.restoreAllFromRecycledBinMoneyReceipts,
+);
 export const QuotationRoutes = router;
-

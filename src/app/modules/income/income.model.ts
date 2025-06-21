@@ -38,7 +38,7 @@ const incomeSchema: Schema<TIncome> = new Schema<TIncome>(
     },
     income_source: {
       type: String,
-
+      required: [true, 'Income source is required.'],
     },
     service_type: {
       type: String,

@@ -9,14 +9,8 @@ const createAdjustment = async (
   next: NextFunction,
 ) => {
   try {
-    const file = req.file;
-    const payload = req.body;
-    if (payload.data) {
-      Object.assign(payload, JSON.parse(payload.data));
-      delete payload.data;
-    }
 
-    const result = await adjustmentServices.createAdjustment(payload, file);
+    const result = await adjustmentServices.createAdjustment(req.body);
 
     sendResponse(res, {
       statusCode: httpStatus.OK,

@@ -32,9 +32,6 @@ const ProductSchema = new Schema<TProduct>(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Brand',
     },
-    barcode: {
-      type: [String],
-    },
     tags: {
       type: [String],
     },
@@ -42,19 +39,30 @@ const ProductSchema = new Schema<TProduct>(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Unit',
     },
-    product_price: {
+    warehouse: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Warehouse',
+    },
+    purchasePrice: {
       type: Number,
     },
     expense: {
       type: Number,
     },
-    unit_price: {
+    sellingPrice: {
       type: Number,
     },
+    minimumSalePrice: {
+      type: Number,
+    },
+
     product_tax: {
       type: Number,
     },
     shipping: {
+      type: Number,
+    },
+    product_quantity: {
       type: Number,
     },
     tax_method: {
@@ -81,18 +89,6 @@ const ProductSchema = new Schema<TProduct>(
 
     // Inventory fields
     initialStock: {
-      type: Number,
-      default: 0,
-    },
-    stock: {
-      type: Number,
-      default: 0,
-    },
-    stockIn: {
-      type: Number,
-      default: 0,
-    },
-    stockOut: {
       type: Number,
       default: 0,
     },
@@ -130,7 +126,7 @@ const ProductSchema = new Schema<TProduct>(
     },
     shelfLifeUnit: {
       type: String,
-      enum: ['Days', 'Weeks', 'Months', 'Years'],
+      enum: ['days', 'weeks', 'months', 'years'],
     },
     expiryAlertDays: {
       type: Number,

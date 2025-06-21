@@ -12,8 +12,8 @@ import config from './app/config';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import morgan from 'morgan';
-
 const app: Application = express();
+app.use(helmet());
 
 // Define ARCHIVE_PATH
 const rootDir = process.cwd();
@@ -28,38 +28,16 @@ if (config.NODE_ENV === 'development') {
 app.use(
   rateLimit({
     max: 2000,
-    windowMs: 60 * 60 * 1000, 
-    message: 'Too many requests sent by this IP, please try again in an hour!',
+    windowMs: 60 * 60 * 1000, // 1 hour
+    message: 'Too many requests sent by this IP, please try again in an hour!'
   })
 );
-
-app.use(helmet());
 app.use(express.json());
-
-// ✅ Proper CORS setup
-const allowedOrigins = [
-  config.CROSS_ORIGIN_ADMIN,
-  'http://localhost:5174', 
-];
-
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.error('Blocked by CORS:', origin);
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-  })
-);
+app.use(cors());
 
 app.set('view engine', 'ejs');
 app.use(express.static(path.join('public')));
 
-// API routes
 app.use('/api/v1', router);
 
 app.get('/', (req: Request, res: Response) => {
@@ -69,6 +47,7 @@ app.get('/', (req: Request, res: Response) => {
     message: 'Welcome to the API',
   });
 });
+
 
 app.get('/api/v1/logs', async (req: Request, res: Response) => {
   try {
@@ -89,6 +68,7 @@ app.post('/api/v1/backup', async (req: Request, res: Response) => {
 });
 
 cron.schedule('0 0 * * *', async () => {
+  
   try {
     await backupMongoDB();
     console.log('Automatic backup completed successfully ✅');
@@ -105,26 +85,35 @@ app.post('/api/v1/restore', async (req: Request, res: Response) => {
     res.status(500).json({ status: 'error', message: 'Restore failed', error: error.message });
   }
 });
-
 app.get('/api/v1/download-backup', (req: Request, res: Response) => {
   res.download(ARCHIVE_PATH, 'trust-auto-solutions.gzip');
 });
-
-app.get('/api/v1/backup-logs', (req: Request, res: Response) => {
+app.get('/api/v1/backup-logs',  (req: Request, res: Response) => {
   const logPath = path.join(process.cwd(), 'public', 'backup_logs.json');
 
   if (fs.existsSync(logPath)) {
     const logs = JSON.parse(fs.readFileSync(logPath, 'utf8'));
+
+    // Sort logs by backupEndTime in descending order
     logs.sort(
       (a: any, b: any) => new Date(b.backupEndTime).getTime() - new Date(a.backupEndTime).getTime()
     );
+
     res.json(logs);
   } else {
     res.status(404).json({ message: 'No logs found' });
   }
 });
 
-// Error Handling
+// Scheduled backup every day at midnight
+// cron.schedule('0 0 * * *', () => {
+//   console.log('Running daily scheduled backup...');
+//   backupMongoDB()
+//     .then(() => console.log('Backup completed successfully'))
+//     .catch((error) => console.error('Backup failed:', error));
+// });
+
+
 app.use(globalErrorHandler);
 app.use(notFound);
 

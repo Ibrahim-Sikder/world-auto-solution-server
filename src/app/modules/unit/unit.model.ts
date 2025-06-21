@@ -11,10 +11,7 @@ const unitSchema: Schema = new Schema<TUnit>(
       type: String,
       required: [true, 'Short name is required'],
     },
-    image: {
-      type: String,
-      required: [true, 'Image URL is required'],
-    },
+   
   },
   {
     timestamps: true,

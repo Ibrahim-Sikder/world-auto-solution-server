@@ -12,8 +12,9 @@ const purchaseSchema: Schema<TPurchase> = new Schema<TPurchase>(
       required: [true, 'Reference number is required'],
     },
     warehouse: {
-      type: String,
-      required: [true, 'Warehouse is required'],
+       type: Types.ObjectId,
+      ref: 'Warehouse',
+      required: true,
     },
     attachDocument: {
       type: String,

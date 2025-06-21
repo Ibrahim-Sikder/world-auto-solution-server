@@ -56,6 +56,9 @@ const getAllProduct = async (query: Record<string, unknown>) => {
     {
       path: 'suppliers',
     },
+    {
+      path: 'warehouse',
+    },
   ]);
 
   return {
@@ -79,6 +82,9 @@ const getSinigleProduct = async (id: string) => {
     },
     {
       path: 'suppliers',
+    },
+    {
+      path: 'warehouse',
     },
   ]);
   return result;

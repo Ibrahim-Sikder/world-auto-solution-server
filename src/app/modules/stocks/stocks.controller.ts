@@ -76,10 +76,25 @@ const deleteStock = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
+const transferStock = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await stockServices.transferStock(req.body);
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Stock transferred successfully',
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const stockControllers = {
   createStock,
   getAllStocks,
   getSingleStock,
   updateStock,
   deleteStock,
+  transferStock
 };

@@ -18,126 +18,9 @@ import ejs from 'ejs';
 import { formatToIndianCurrency } from '../quotation/quotation.utils';
 import { Invoice } from '../invoice/invoice.model';
 
-// const createMoneyReceiptDetails = async (payload: TMoneyReceipt) => {
-//   const session = await mongoose.startSession();
-//   session.startTransaction();
 
-//   try {
-//     const {
-//       user_type,
-//       Id,
-//       chassis_no,
-//       full_reg_number,
-//       invoice: invoiceNo,
-//       job_no,
-//     } = payload;
 
-//     const sanitizeData = sanitizePayload(payload);
-//     const moneyReceiptId = await generateMoneyReceiptId();
 
-//     const totalAmountInWords = amountInWords(
-//       sanitizeData.total_amount as number,
-//     );
-
-//     const advanceInWords =
-//       sanitizeData.advance !== undefined
-//         ? amountInWords(sanitizeData.advance)
-//         : 'Zero';
-
-//     const remainingInWords =
-//       sanitizeData.remaining !== undefined
-//         ? amountInWords(sanitizeData.remaining)
-//         : '';
-
-//     const moneyReceiptData = new MoneyReceipt({
-//       ...sanitizeData,
-//       moneyReceiptId,
-//       total_amount_in_words: totalAmountInWords,
-//       advance_in_words: advanceInWords,
-//       remaining_in_words: remainingInWords,
-//     });
-
-//     // Check and associate customer, company, or showroom
-//     if (user_type === 'customer') {
-//       const existingCustomer = await Customer.findOne({
-//         customerId: Id,
-//       }).session(session);
-//       if (existingCustomer) {
-//         await Customer.findByIdAndUpdate(
-//           existingCustomer._id,
-//           { $push: { money_receipts: moneyReceiptData._id } },
-//           { new: true, session },
-//         );
-//         moneyReceiptData.customer = existingCustomer._id;
-//       }
-//     } else if (user_type === 'company') {
-//       const existingCompany = await Company.findOne({
-//         companyId: Id,
-//       }).session(session);
-//       if (existingCompany) {
-//         await Company.findByIdAndUpdate(
-//           existingCompany._id,
-//           { $push: { money_receipts: moneyReceiptData._id } },
-//           { new: true, session },
-//         );
-//         moneyReceiptData.company = existingCompany._id;
-//       }
-//     } else if (user_type === 'showRoom') {
-//       const existingShowRoom = await ShowRoom.findOne({
-//         showRoomId: Id,
-//       }).session(session);
-//       if (existingShowRoom) {
-//         await ShowRoom.findByIdAndUpdate(
-//           existingShowRoom._id,
-//           { $push: { money_receipts: moneyReceiptData._id } },
-//           { new: true, session },
-//         );
-//         moneyReceiptData.showRoom = existingShowRoom._id;
-//       }
-//     }
-
-//     // Associate vehicle if chassis_no is provided
-//     if (chassis_no) {
-//       const vehicleData = await Vehicle.findOne({ chassis_no });
-
-//       if (vehicleData) {
-//         moneyReceiptData.vehicle = vehicleData._id;
-//         moneyReceiptData.full_reg_number = full_reg_number;
-//         await moneyReceiptData.save({ session });
-//       }
-//     }
-
-//     const existingInvoice = await Invoice.findOne({
-//       $or: [{ invoice_no: invoiceNo }, { job_no }],
-//     }).session(session);
-
-//     if (existingInvoice) {
-//       await Invoice.findByIdAndUpdate(
-//         existingInvoice._id,
-//         {
-//           $push: { moneyReceipts: moneyReceiptData._id },
-//           $inc: { totalPaid: sanitizeData.total_amount },
-//         },
-//         { new: true, session },
-//       );
-//       moneyReceiptData.invoice = existingInvoice._id;
-//       moneyReceiptData.job_no = existingInvoice.job_no;
-//     }
-
-//     // Save money receipt
-//     await moneyReceiptData.save({ session });
-
-//     await session.commitTransaction();
-//     session.endSession();
-//     return moneyReceiptData;
-//   } catch (error) {
-//     await session.abortTransaction();
-//     session.endSession();
-//     throw error;
-//   }
-// };
-
-// this is for invoice calculate
 
 const createMoneyReceiptDetails = async (payload: TMoneyReceipt) => {
   const session = await mongoose.startSession();
@@ -237,7 +120,6 @@ const createMoneyReceiptDetails = async (payload: TMoneyReceipt) => {
     const existingInvoice = await Invoice.findOne({
       $or: [{ invoice_no: invoiceNo }, { job_no }],
     }).session(session);
-    console.log(existingInvoice);
     if (existingInvoice) {
       const totalAmount = Number(existingInvoice.net_total) || 0;
 
@@ -290,7 +172,7 @@ const createMoneyReceiptDetails = async (payload: TMoneyReceipt) => {
   }
 };
 
-const getAllMoneyReceiptsFromDB = async (
+ const getAllMoneyReceiptsFromDB = async (
   id: string | null,
   limit: number,
   page: number,
@@ -314,10 +196,7 @@ const getAllMoneyReceiptsFromDB = async (
 
   // Apply search term filtering if provided
   if (searchTerm) {
-    const escapedFilteringData = searchTerm.replace(
-      /[.*+?^${}()|[\]\\]/g,
-      '\\$&',
-    );
+    const escapedFilteringData = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
     const moneyReceiptSearchQuery = SearchableFields.map((field) => ({
       [field]: { $regex: escapedFilteringData, $options: 'i' },
@@ -344,7 +223,7 @@ const getAllMoneyReceiptsFromDB = async (
     searchQuery.isRecycled = isRecycled === 'true';
   }
 
-  // Construct the aggregation pipeline for fetching data
+  // Aggregation pipeline to get filtered money receipts
   const moneyReceipts = await MoneyReceipt.aggregate([
     {
       $lookup: {
@@ -354,12 +233,7 @@ const getAllMoneyReceiptsFromDB = async (
         as: 'vehicle',
       },
     },
-    {
-      $unwind: {
-        path: '$vehicle',
-        preserveNullAndEmptyArrays: true,
-      },
-    },
+    { $unwind: { path: '$vehicle', preserveNullAndEmptyArrays: true } },
     {
       $lookup: {
         from: 'companies',
@@ -368,12 +242,7 @@ const getAllMoneyReceiptsFromDB = async (
         as: 'company',
       },
     },
-    {
-      $unwind: {
-        path: '$company',
-        preserveNullAndEmptyArrays: true,
-      },
-    },
+    { $unwind: { path: '$company', preserveNullAndEmptyArrays: true } },
     {
       $lookup: {
         from: 'customers',
@@ -382,12 +251,7 @@ const getAllMoneyReceiptsFromDB = async (
         as: 'customer',
       },
     },
-    {
-      $unwind: {
-        path: '$customer',
-        preserveNullAndEmptyArrays: true,
-      },
-    },
+    { $unwind: { path: '$customer', preserveNullAndEmptyArrays: true } },
     {
       $lookup: {
         from: 'showrooms',
@@ -396,27 +260,59 @@ const getAllMoneyReceiptsFromDB = async (
         as: 'showRoom',
       },
     },
-    {
-      $unwind: {
-        path: '$showRoom',
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $match: id ? idMatchQuery : {}, // Apply id filtering if id exists
-    },
-    {
-      $match: searchQuery, // Apply search term filtering
-    },
-    {
-      $sort: { createdAt: -1 },
-    },
+    { $unwind: { path: '$showRoom', preserveNullAndEmptyArrays: true } },
+    { $match: id ? idMatchQuery : {} },
+    { $match: searchQuery },
+    { $sort: { createdAt: -1 } },
     ...(page && limit
       ? [{ $skip: (page - 1) * limit }, { $limit: limit }]
       : []),
   ]);
 
-  // Calculate total data count using an aggregation pipeline
+  // Group by job_no to calculate total and remaining (from only the first receipt)
+  const jobMap: {
+    [job_no: string]: { receipts: any[]; totalAmount: number; remaining: number };
+  } = {};
+
+  for (const receipt of moneyReceipts) {
+    const jobNo = receipt.job_no;
+
+    if (!jobNo) continue;
+
+    if (!jobMap[jobNo]) {
+      jobMap[jobNo] = {
+        receipts: [],
+        totalAmount: 0,
+        remaining: 0,
+      };
+    }
+
+    jobMap[jobNo].receipts.push(receipt);
+    jobMap[jobNo].totalAmount += receipt.total_amount || 0;
+
+    // Use only the first receipt's remaining value
+    if (jobMap[jobNo].receipts.length === 1) {
+      jobMap[jobNo].remaining = receipt.remaining || 0;
+    }
+  }
+
+
+  for (const jobNo in jobMap) {
+    const { receipts, remaining, totalAmount } = jobMap[jobNo];
+
+    let color = '#2dce89';
+
+    if (remaining > 0 && remaining < totalAmount) {
+      color = '#ffad46'; 
+    } else if (remaining >= totalAmount) {
+      color = '#f5365c';
+    }
+
+    receipts.forEach((r) => {
+      r.paymentColor = color;
+    });
+  }
+
   const totalDataAggregation = await MoneyReceipt.aggregate([
     {
       $lookup: {
@@ -426,12 +322,7 @@ const getAllMoneyReceiptsFromDB = async (
         as: 'vehicle',
       },
     },
-    {
-      $unwind: {
-        path: '$vehicle',
-        preserveNullAndEmptyArrays: true,
-      },
-    },
+    { $unwind: { path: '$vehicle', preserveNullAndEmptyArrays: true } },
     {
       $lookup: {
         from: 'companies',
@@ -440,12 +331,7 @@ const getAllMoneyReceiptsFromDB = async (
         as: 'company',
       },
     },
-    {
-      $unwind: {
-        path: '$company',
-        preserveNullAndEmptyArrays: true,
-      },
-    },
+    { $unwind: { path: '$company', preserveNullAndEmptyArrays: true } },
     {
       $lookup: {
         from: 'customers',
@@ -454,12 +340,7 @@ const getAllMoneyReceiptsFromDB = async (
         as: 'customer',
       },
     },
-    {
-      $unwind: {
-        path: '$customer',
-        preserveNullAndEmptyArrays: true,
-      },
-    },
+    { $unwind: { path: '$customer', preserveNullAndEmptyArrays: true } },
     {
       $lookup: {
         from: 'showrooms',
@@ -468,24 +349,12 @@ const getAllMoneyReceiptsFromDB = async (
         as: 'showRoom',
       },
     },
-    {
-      $unwind: {
-        path: '$showRoom',
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $match: id ? idMatchQuery : {}, // Apply id filtering if id exists
-    },
-    {
-      $match: searchQuery, // Apply search term filtering
-    },
-    {
-      $count: 'totalCount',
-    },
+    { $unwind: { path: '$showRoom', preserveNullAndEmptyArrays: true } },
+    { $match: id ? idMatchQuery : {} },
+    { $match: searchQuery },
+    { $count: 'totalCount' },
   ]);
 
-  // Extract total data count
   const totalData =
     totalDataAggregation.length > 0 ? totalDataAggregation[0].totalCount : 0;
   const totalPages = Math.ceil(totalData / limit);
@@ -499,9 +368,10 @@ const getAllMoneyReceiptsFromDB = async (
   };
 };
 
+
 const getSingleMoneyReceiptDetails = async (id: string) => {
   const singleMoneyReceipt =
-    await MoneyReceipt.findById(id).populate('vehicle');
+    await MoneyReceipt.findById(id).populate('vehicle').populate('invoice');
 
   if (!singleMoneyReceipt) {
     throw new AppError(StatusCodes.NOT_FOUND, 'No money receipt found');
@@ -727,83 +597,7 @@ const deleteMoneyReceipt = async (id: string) => {
 
   return null;
 };
-// const generateMoneyPdf = async (
-//   id: string,
-//   imageUrl: string,
-// ): Promise<Buffer> => {
-//   const money = await MoneyReceipt.findById(id)
-//     .populate('customer')
-//     .populate('company')
-//     .populate('showRoom')
-//     .populate('vehicle');
-
-//   if (!money) {
-//     throw new Error('money not found');
-//   }
-
-//   let logoBase64 = '';
-//   try {
-//     const logoUrl = `${imageUrl}/images/world-auto-solution.jpg`;
-//     const logoResponse = await fetch(logoUrl);
-//     const logoBuffer = await logoResponse.arrayBuffer();
-//     logoBase64 = Buffer.from(logoBuffer).toString('base64');
-//   } catch (error) {
-//     console.warn('Failed to load logo:', error);
-//   }
-
-//   const filePath = join(__dirname, '../../templates/money.ejs');
-
-//   const html = await new Promise<string>((resolve, reject) => {
-//     ejs.renderFile(
-//       filePath,
-//       {
-//         money,
-//         imageUrl,
-//         formatToIndianCurrency,
-//         logoBase64,
-//       },
-//       (err, str) => {
-//         if (err) return reject(err);
-//         resolve(str);
-//       },
-//     );
-//   });
-
-//   try {
-//     const browser = await puppeteer.launch({
-//       executablePath: '/usr/bin/chromium-browser',
-//       args: ['--no-sandbox', '--disable-setuid-sandbox'],
-//       headless: true,
-//     });
-
-//     const page = await browser.newPage();
-
-//     await page.setContent(html, {
-//       waitUntil: ['networkidle0', 'load', 'domcontentloaded'],
-//       timeout: 60000,
-//     });
-
-//     const pdfBuffer = await page.pdf({
-//       format: 'A4',
-//       printBackground: true,
-//       margin: {
-//         top: '20px',
-//         right: '20px',
-//         bottom: '20px',
-//         left: '20px',
-//       },
-//     });
-
-//     await browser.close();
-
-//     return Buffer.from(pdfBuffer);
-//   } catch (error) {
-//     console.error('Error generating PDF:', error);
-//     throw new Error('PDF generation failed');
-//   }
-// };
-
-export const generateMoneyPdf = async (
+ const generateMoneyPdf = async (
   id: string,
   imageUrl: string,
 ): Promise<Buffer> => {
@@ -811,10 +605,11 @@ export const generateMoneyPdf = async (
   if (!money) {
     throw new Error('Money receipt not found');
   }
-
   let logoBase64 = '';
+
+  console.log(money)
   try {
-    const logoUrl = `${imageUrl}/images/world-auto-solution.jpg`;
+    const logoUrl = `${imageUrl}/images/logo.png`;
     const logoResponse = await fetch(logoUrl);
     const logoBuffer = await logoResponse.arrayBuffer();
     logoBase64 = Buffer.from(logoBuffer).toString('base64');

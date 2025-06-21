@@ -23,7 +23,7 @@ const purchaseOrderSchema = new Schema<TPurchaseOrder>(
     expectedDeliveryDate: { type: String },
     referenceNo: { type: Number, required: true },
     suppliers: { type: Schema.Types.ObjectId, ref: 'Supplier', required: true },
-    warehouse: { type: String, required: true },
+    warehouse: { type: Schema.Types.ObjectId, ref: 'Warehouse', required: true },
     status: {
       type: String,
       enum: ['Pending', 'Approved', 'Cancelled', 'Shipped','Received'],

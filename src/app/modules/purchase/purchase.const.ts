@@ -4,6 +4,7 @@ export const SearchableFields = [
   'fullCustomerNum',
   'customer_contact',
   'customer_contact',
+  'customer'
 ];
 
 export const vehicleFields = [

@@ -12,9 +12,10 @@ export type TProduct = {
   barcode: string[];
   tags: string[];
   unit: ObjectId;
-  product_price: number;
+  purchasePrice: number;
+  sellingPrice: number;
+  minimumSalePrice: number;
   expense: number;
-  unit_price: number;
   product_tax: number;
   tax_method: string;
   warranty: string;
@@ -24,15 +25,13 @@ export type TProduct = {
   stock_alert: number;
   product_quantity: number;
   suppliers: ObjectId;
+  warehouse: ObjectId;
   productCost: number;
   isDeleted: boolean;
   shipping: number;
 
   // Inventory Management Fields
   initialStock: number;
-  stock: number;
-  stockIn: number;
-  stockOut: number;
   reorderLevel: number;
   lastPurchaseDate?: string;
   lastSoldDate?: string;

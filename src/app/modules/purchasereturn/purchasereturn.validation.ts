@@ -26,9 +26,8 @@ const productReturnSchema = z.object({
 export const createPurchaseReturn = z.object({
   body: z.object({
     returnDate: z.string({ required_error: 'Return date is required' }),
-    purchaseId: z.string({ required_error: 'Purchase ID is required' }),
+   
     referenceNo: z.number({ required_error: 'Reference number is required' }),
-    supplier: z.string({ required_error: 'Supplier ID is required' }),
     supplierName: z.string().optional(),
     warehouse: z.string({ required_error: 'Warehouse is required' }),
     returnReason: z.string({ required_error: 'Reason is required' }),
@@ -50,9 +49,7 @@ export const createPurchaseReturn = z.object({
 export const updatePurchaseReturn = z.object({
   body: z.object({
     returnDate: z.string().optional(),
-    purchaseId: z.string().optional(),
     referenceNo: z.number().optional(),
-    supplier: z.string().optional(),
     supplierName: z.string().optional(),
     warehouse: z.string().optional(),
     returnReason: z.string().optional(),

@@ -39,5 +39,5 @@ const StockSchema = new Schema<IStockCount, IStockModel>(
   },
 );
 
-const StockCount = model<IStockCount, IStockModel>('Stock', StockSchema);
+const StockCount = model<IStockCount, IStockModel>('StockCount', StockSchema);
 export default StockCount;

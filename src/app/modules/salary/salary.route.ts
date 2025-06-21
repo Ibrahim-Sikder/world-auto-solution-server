@@ -1,19 +1,21 @@
-import express from 'express';
-import { salaryController } from './salary.controller';
+import express from "express"
+import { salaryController } from "./salary.controller"
 
-const router = express.Router();
+const router = express.Router()
 
-router
-  .route('/')
-  .post(salaryController.createSalary)
-  .get(salaryController.getSalariesForCurrentMonth);
 
-router.route('/all-salary').get(salaryController.getSingleSalary);
-router.route('/:id').patch(salaryController.updateSalaryIntoDB);
-router.route('/:id').delete(salaryController.updateSalaryIntoDB);
+router.route("/").post(salaryController.createSalary).get(salaryController.getSalariesForCurrentMonth)
+router.get('/all', salaryController.getAllSalaries);
 
-// router.route('/today').get(attendanceController.getTodayAttendance);
+router.route("/single/:id").get(salaryController.getSingleSalary)
+router.route("/all-salary").get(salaryController.getSingleSalary)
+router.route("/:id").patch(salaryController.updateSalaryIntoDB)
+router.route("/:id").delete(salaryController.deleteSalaryFromDB)
 
-// router.route('/:date').get(attendanceController.getSingleDateAttendance);
 
-export const SalaryRoutes = router;
+router.route("/payment-status").get(salaryController.getSalariesWithPaymentStatus)
+router.route("/:id/history").get(salaryController.getPaymentHistory)
+router.route("/:id/payment").post(salaryController.addPartialPayment)
+router.route("/statistics").get(salaryController.getSalaryStatistics)
+
+export const SalaryRoutes = router

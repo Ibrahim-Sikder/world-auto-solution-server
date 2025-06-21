@@ -1,5 +1,8 @@
+import { ObjectId } from "mongoose";
+
 export interface IWarehouse extends Document {
   name: string;
+  product:ObjectId;
   code: string;
   type: string;
   status: "active" | "inactive";
@@ -14,7 +17,6 @@ export interface IWarehouse extends Document {
   phone: string;
   email: string;
   description: string;
-
   totalProducts?: number;
   totalQuantity?: number;
 }

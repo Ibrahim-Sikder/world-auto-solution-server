@@ -55,7 +55,6 @@ const getSinigleCategory = async (id: string) => {
   return result;
 };
 const updateCategory = async (id: string, payload: Partial<TCategory>) => {
-  console.log(payload)
   const result = await Category.findByIdAndUpdate(id, payload, {
     new: true,
     runValidators: true,

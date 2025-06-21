@@ -1,9 +1,9 @@
-import { ObjectId } from "mongoose";
+import { ObjectId } from 'mongoose';
 
 export interface TPurchase {
   date: string;
   referenceNo: string;
-  warehouse: string;
+  warehouse: ObjectId;
   attachDocument: string;
   suppliers: ObjectId;
   shipping: number;
@@ -26,4 +26,3 @@ export interface TPurchase {
     serialNumber?: string;
   }[];
 }
-

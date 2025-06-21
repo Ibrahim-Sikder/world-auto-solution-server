@@ -55,15 +55,21 @@ const getSinglePurchaseOrder = async (id: string) => {
       path: 'suppliers',
       select: 'full_name',
     },
+    {
+      path: 'warehouse',
+      select: 'name',
+    },
   ]);
   return result;
 };
+
 
 export const updatePurchaseOrder = async (
   id: string,
   payload: Partial<TPurchaseOrder>
 ): Promise<TPurchaseOrder | null> => {
   const isMarkingReceived = payload.status === 'Received';
+
 
   const updatedOrder = await PurchaseOrder.findByIdAndUpdate(id, payload, {
     new: true,
@@ -104,34 +110,43 @@ export const updatePurchaseOrder = async (
     await Purchase.create(purchasePayload);
 
     // Step 2: Update Product Stock in Stock collection
-    for (const item of updatedOrder.products) {
-      const existingStock = await Stocks.findOne({
-        product: item.productId,
-        warehouse: updatedOrder.warehouse,
-        batchNumber: item.batchNumber || null,
-      });
+for (const item of updatedOrder.products) {
+  const existingStock = await Stocks.findOne({
+    product: item.productId,
+    warehouse: updatedOrder.warehouse,
+    batchNumber: item.batchNumber || null,
+  });
 
-      if (existingStock) {
-        // Update existing stock quantity
-        existingStock.quantity += item.quantity;
-        await existingStock.save();
-      } else {
-        // Create new stock entry
-        await Stocks.create({
-          product: item.productId,
-          warehouse: new Types.ObjectId(updatedOrder.warehouse),
-          quantity: item.quantity,
-          batchNumber: item.batchNumber || null,
-          expiryDate: null, 
-        });
-      }
+  const stockData = {
+    product: item.productId,
+    warehouse: updatedOrder.warehouse,
+    quantity: item.quantity,
+    batchNumber: item.batchNumber || null,
+    expiryDate: null,
+    type: 'in',
+    referenceType: 'purchase',
+    purchasePrice: item.unit_price, // required if type is 'in'
+    date: new Date(),
+  };
 
-      await Product.findByIdAndUpdate(
-        item.productId,
-        { $inc: { stock: item.quantity } },
-        { new: true }
-      );
-    }
+  if (existingStock) {
+    // Update existing stock quantity
+    existingStock.quantity += item.quantity;
+    await existingStock.save();
+  } else {
+    // Create new stock entry with required fields
+    await Stocks.create(stockData);
+  }
+
+  // Also update Product model stock
+  await Product.findByIdAndUpdate(
+    item.productId,
+    { $inc: { stock: item.quantity } },
+    { new: true }
+  );
+}
+
+
   }
 
   return updatedOrder;

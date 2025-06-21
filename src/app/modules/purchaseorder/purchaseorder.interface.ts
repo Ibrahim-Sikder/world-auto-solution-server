@@ -10,8 +10,8 @@ export interface TPurchaseOrderProduct {
   tax?: number;
   shipping?: number;
   subtotal?: number;
-  batchNumber?: string;     // ✅ Added to resolve your error
-  expiryDate?: Date;        // Optional if you plan to use it later
+  batchNumber?: string;
+  expiryDate?: Date;    
 }
 
 export interface TPurchaseOrder {
@@ -19,7 +19,7 @@ export interface TPurchaseOrder {
   expectedDeliveryDate?: string;
   referenceNo: number;
   suppliers: Types.ObjectId;
-  warehouse: string;
+  warehouse: Types.ObjectId;
   status: 'Pending' | 'Approved' | 'Cancelled' | 'Shipped' | 'Received';
   products: TPurchaseOrderProduct[];
   totalAmount?: number;

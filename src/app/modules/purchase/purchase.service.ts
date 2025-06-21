@@ -1,21 +1,49 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import QueryBuilder from '../../builder/QueryBuilder';
-import { ImageUpload } from '../../utils/ImageUpload';
-import path from 'path';
 import { Purchase } from './purchase.model';
 import { purchaseSearch } from './purchase.const';
 import { TPurchase } from './purchase.interface';
-const createPurchase = async (payload: any, file?: Express.Multer.File) => {
-  try {
- 
+import mongoose from 'mongoose';
+import { Stocks } from '../stocks/stocks.model';
+import AppError from '../../errors/AppError';
+import httpStatus from 'http-status';
+const createPurchase = async (payload: any) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-    const newCategory = await Purchase.create(payload);
-    return newCategory;
-  } catch (error: any) {
-    console.error('Error creating category:', error.message);
-    throw new Error(
-      error.message ||
-        'An unexpected error occurred while creating the category',
+  try {
+    const newPurchase = await Purchase.create([payload], { session });
+    for (const item of payload.products) {
+      await Stocks.create(
+        [
+          {
+            product: item.productId,
+            warehouse: payload.warehouse,
+            quantity: item.quantity,
+            type: 'in',
+            referenceType: 'purchase',
+            // referenceId: newPurchase[0]._id,
+            purchasePrice: item.productPrice,
+            batchNumber: item.batchNumber || undefined,
+            expiryDate: item.expiryDate || undefined,
+            note: payload.note || '',
+          },
+        ],
+        { session },
+      );
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return newPurchase[0];
+  } catch (error) {
+    // ❌ Rollback if any error
+    await session.abortTransaction();
+    session.endSession();
+    throw new AppError(
+      httpStatus.NOT_FOUND,
+      'Failed to create purchase and stock',
     );
   }
 };
@@ -54,7 +82,6 @@ const getSiniglePurchase = async (id: string) => {
   return result;
 };
 const updatePurchase = async (id: string, payload: Partial<TPurchase>) => {
-  console.log(payload);
   const result = await Purchase.findByIdAndUpdate(id, payload, {
     new: true,
     runValidators: true,
