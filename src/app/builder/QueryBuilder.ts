@@ -25,18 +25,24 @@ class QueryBuilder<T> {
     return this;
   }
 
-  filter() {
-    const queryObj = { ...this.query }; // copy
+filter() {
+  const queryObj = { ...this.query };
+  const excludeFields = ['searchTerm', 'sort', 'limit', 'page', 'fields'];
+  excludeFields.forEach((el) => delete queryObj[el]);
 
-    // Filtering
-    const excludeFields = ['searchTerm', 'sort', 'limit', 'page', 'fields'];
+  Object.keys(queryObj).forEach((key) => {
+    if (!queryObj[key]) {
+      delete queryObj[key];
+    }
+  });
 
-    excludeFields.forEach((el) => delete queryObj[el]);
-
+  if (Object.keys(queryObj).length > 0) {
     this.modelQuery = this.modelQuery.find(queryObj as FilterQuery<T>);
-
-    return this;
   }
+
+  return this;
+}
+
 
   sort() {
     const sort =

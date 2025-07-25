@@ -10,6 +10,7 @@ export const CustomerSearchableFields = [
   'driver_name',
   'reference_name',
   'customer_address',
+  'customer_address',
 ];
 
 export const vehicleFields = [
